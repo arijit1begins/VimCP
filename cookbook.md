@@ -166,6 +166,56 @@
 | `:e filename` | Open or create a new file |
 | `:saveas filename` | Save current buffer as a new file |
 
+### Directory Navigation
+
+Manage Vim's working directory to compile files in the correct path and load context properly.
+
+| Command | Action | Description |
+|---------|--------|-------------|
+| `:pwd` | Print Working Directory | Shows the path Vim is currently executing from. |
+| `:cd {path}` | Change Directory | Globally changes Vim's working directory to `{path}`. |
+| `:cd %:h` | CD to current file's folder | Set working directory to the folder containing the active file. |
+| `:lcd {path}` | Local Change Directory | Changes working directory *only* for the current active window. |
+| `:find {file}` | Find and Open File | Search and open `{file}` anywhere in the `path` list. |
+| `:set path+=**` | Enable Recursive Find | Allows `:find` to search subdirectories recursively. |
+
+### Directory & File Management
+
+Manage files and folders without leaving the editor using native Vim functions or shell escapes.
+
+#### 1. Via Command Line / Vim Functions
+* **Create File**:
+  * `:e path/to/newfile.cpp` then `:w` (Opens buffer, writes/saves to create it).
+  * `:write filename` (Saves a copy of current buffer as `filename`).
+  * `:!touch filename` (Executes system `touch` command).
+* **Create Directory**:
+  * `:call mkdir("dirname", "p")` (Native Vim function; `"p"` creates intermediate parent directories if missing).
+  * `:!mkdir -p dirname` (Executes system `mkdir` command).
+* **Delete File**:
+  * `:call delete("filename")` (Native Vim function to delete a file).
+  * `:!rm filename` (Executes system `rm` command).
+* **Delete Directory**:
+  * `:call delete("dirname", "rf")` (Native Vim function to delete folder and contents recursively).
+  * `:!rm -rf dirname` or `:!rmdir dirname` (Executes system command).
+* **Rename / Move**:
+  * `:!mv oldpath newpath` (Executes system `mv` command).
+
+#### 2. Via File Browser (netrw)
+Open the file browser with `:Vex` or `<leader>e` to manage files visually:
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `<leader>e` (`,e`) | Toggle File Browser | Opens netrw in a vertical split (`:Vex`). |
+| `Enter` | Open File / Enter Directory | Opens the file or enters the folder under the cursor. |
+| `-` | Go Up One Directory | Moves up to the parent directory level. |
+| `%` | Create File | Prompts for a filename to create in the current directory. |
+| `d` | Create Directory | Prompts for a directory name to create. |
+| `D` | Delete File/Directory | Deletes the file or directory under the cursor (asks for confirmation). |
+| `R` | Rename/Move File | Prompts to rename/move the file or folder under the cursor. |
+| `c` | Make Current Directory | Sets Vim's active working directory (`:pwd`) to the folder under the cursor. |
+| `gh` | Toggle Hidden Files | Shows/hides dotfiles (e.g. `.git`, `.clang-format`). |
+| `q` | Close Browser | Closes the file browser window. |
+
 ### Window Splits
 
 | Command | Action |
@@ -185,17 +235,6 @@
 | `Ctrl+w` then `=` | Equalize all window sizes |
 | `Ctrl+w` then `c` or `q` | Close current window |
 | `Ctrl+w` then `o` | Close all other windows (keep only current) |
-
-### File Browser (netrw)
-
-| Key | Action |
-|-----|--------|
-| `<leader>e` (`,e`) | Toggle file browser |
-| `Enter` | Open file or enter directory |
-| `-` | Go up one directory level |
-| `R` | Refresh directory listing |
-| `q` | Close file browser window |
-| `D` | Delete file/directory |
 
 ---
 
@@ -218,6 +257,41 @@
 | `:term gdb ./main` | Open terminal with gdb ready |
 | `Ctrl+\` then `Ctrl+n` | Exit terminal insert mode to normal mode |
 | `i` | Enter terminal insert mode |
+
+### Building with CMake
+
+For larger projects or structured codebases, CMake is the industry-standard build system. You can generate, build, and debug CMake targets from within Vim.
+
+#### 1. Basic CMake Compilation (Vim Command Line)
+Invoke CMake directly using Vim's shell execution:
+
+* **Generate Build Files**: `:!cmake -B build` (Creates a build system in the `build` directory).
+* **Build Project**: `:!cmake --build build` (Compiles your targets using the generated build system).
+* **Run Binary**: `:!./build/my_program` (Executes the compiled binary).
+
+#### 2. Advanced: Quickfix Integration (Using `:make`)
+Integrate CMake with Vim’s build engine. This parses compilation warnings and errors and places them directly into the **Quickfix list** for instant navigation.
+
+1. **Configure build program**:
+   ```vim
+   :set makeprg=cmake\ --build\ build
+   ```
+2. **Compile the project**:
+   Run `:make` (or `:make -j4` for multi-threaded compilation).
+3. **Navigate compilation errors**:
+   If the build fails, Vim automatically highlights the first error. Use these commands to inspect and navigate:
+   * `:copen` — Open the Quickfix error window.
+   * `:cnext` or `:cn` — Jump to the next compiler error.
+   * `:cprev` or `:cp` — Jump to the previous compiler error.
+   * `:cclose` — Close the Quickfix window.
+
+#### 3. Automatic .vimrc Mapping for CMake
+Add this to your `.vimrc` to build projects with `<F4>`:
+```vim
+" Automatically compile using CMake and open quickfix if there are errors
+autocmd FileType cpp nnoremap <F4> :wa<CR>:set makeprg=cmake\ --build\ build<CR>:make<CR>:cwindow<CR>
+```
+*(Note: `:cwindow` opens the quickfix window only if there are actual compilation errors/warnings).*
 
 ---
 
@@ -471,6 +545,9 @@ nnoremap <leader>e :Vex<CR>
 " 6. Competitive Programming Compilation & Execution Shortcuts
 " Note: These only apply to .cpp files. 
 " % is the current filename, %< is the filename without the extension.
+
+" <F4>: Save all files and build project using CMake
+autocmd FileType cpp nnoremap <F4> :wa<CR>:set makeprg=cmake\ --build\ build<CR>:make<CR>:cwindow<CR>
 
 " <F5>: Save, compile with C++17 & O2 optimization, and run normally
 autocmd FileType cpp nnoremap <F5> :w<CR>:!g++ -std=c++17 -O2 -Wall % -o %< && time ./%<<CR>
