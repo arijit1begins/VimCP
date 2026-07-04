@@ -26,6 +26,10 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: var(--font-body);
     background-color: var(--bg-main);
@@ -284,6 +288,7 @@ body {
     margin-top: 2em;
     margin-bottom: 0.75em;
     color: var(--text-main);
+    scroll-margin-top: 90px; /* Offset for fixed sticky header */
 }
 
 .markdown-body h1 {

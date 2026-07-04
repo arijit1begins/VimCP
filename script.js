@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         // Fetch the markdown content
-        const response = await fetch('cookbook.md');
+        const response = await fetch('cookbook.md?v=' + Date.now());
         if (!response.ok) {
             throw new Error(`Failed to load: ${response.status} ${response.statusText}`);
         }
@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupSidebarResizer();
         setupBackToTop();
         highlightActiveSection();
+        setupSmoothScrolling();
         
     } catch (error) {
         contentDiv.innerHTML = `
@@ -119,39 +120,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         tocNav.innerHTML = tocHtml;
-
-        // Add smooth scrolling
-        document.querySelectorAll('.toc-item').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetId = link.getAttribute('href').substring(1);
-                const targetEl = document.getElementById(targetId);
-                
-                if (targetEl) {
-                    // Close sidebar on mobile after clicking
-                    if (window.innerWidth <= 768) {
-                        sidebar.classList.remove('open');
-                    }
-
-                    // Account for fixed header
-                    const headerOffset = 80;
-                    const elementPosition = targetEl.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-                    window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                    });
-                }
-            });
-        });
     }
 
     function highlightActiveSection() {
-        const headings = Array.from(contentDiv.querySelectorAll('h2, h3'));
-        const tocLinks = Array.from(document.querySelectorAll('.toc-item'));
-
         window.addEventListener('scroll', () => {
+            const headings = contentDiv.querySelectorAll('h2, h3');
+            const tocLinks = document.querySelectorAll('.toc-item');
             let current = '';
             
             // Add offset for the fixed header
@@ -397,6 +371,36 @@ document.addEventListener('DOMContentLoaded', async () => {
                 top: 0,
                 behavior: 'smooth'
             });
+        });
+    }
+
+    function setupSmoothScrolling() {
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a[href^="#"]');
+            if (!link) return;
+            
+            const targetId = link.getAttribute('href').substring(1);
+            if (!targetId) return;
+            
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+                e.preventDefault();
+                
+                // Close sidebar on mobile after clicking
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('open');
+                }
+
+                // Account for fixed header
+                const headerOffset = 90;
+                const elementPosition = targetEl.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: "smooth"
+                });
+            }
         });
     }
 });
