@@ -116,6 +116,49 @@
 | `daw` | Delete a word |
 | `diw` | Delete inner word |
 
+### Visual Mode Commands
+
+Visual mode allows you to highlight text and apply commands directly to the selection. It is extremely powerful for block operations, formatting, and quick modifications.
+
+| Key | Action |
+|-----|--------|
+| `v` | Enter character-wise Visual Mode |
+| `V` | Enter line-wise Visual Mode |
+| `Ctrl+v` | Enter block-wise (column) Visual Mode |
+| `gv` | Re-select the last visual selection |
+| `o` | Toggle cursor between the start and end of the selection |
+
+#### Operations on Selection
+
+Once text is selected, you can apply editing actions:
+
+| Key | Action |
+|-----|--------|
+| `d` or `x` | Delete (cut) selected text |
+| `y` | Yank (copy) selected text |
+| `c` | Change selected text (delete and enter Insert Mode) |
+| `r{char}` | Replace all selected characters with `{char}` |
+| `~` | Toggle case of selected characters |
+| `>` | Indent selection (shift right) |
+| `<` | Unindent selection (shift left) |
+| `u` | Convert selection to lowercase |
+| `U` | Convert selection to uppercase |
+
+#### Column Editing (Block-wise Power Moves)
+
+Using `Ctrl+v` (Block-wise Visual Mode) is a game-changer for Competitive Programming. It allows you to edit columns of text simultaneously.
+
+* **Multi-line Commenting**:
+  1. Go to the first character of the first line you want to comment.
+  2. Press `Ctrl+v` and move down (`j`) to select the first column of the lines.
+  3. Press `I` (uppercase `i`) to insert at the beginning of the selection.
+  4. Type `// ` (or comment characters).
+  5. Press `Esc` — Vim will apply the comment to all selected lines.
+* **Multi-line Deleting/Changing**:
+  1. Select a block of characters using `Ctrl+v`.
+  2. Press `d` or `x` to delete the block.
+  3. Or press `c` to change the entire block, type the new text, and press `Esc` to apply it to all lines.
+
 ---
 
 ## SEARCH & REPLACE
