@@ -530,7 +530,12 @@ Try to run through this exercise until the keystrokes feel entirely natural.
 
 ## APPENDIX: COMPLETE .VIMRC CONFIGURATION
 
-*Copy this entire block into `~/.vimrc`. Ensure you have installed `vim-plug` first.*
+*Copy this entire block into `~/.vimrc`.*
+
+> **Note:** If you don't have `vim-plug` installed, run this one-line command first (or let the auto-install script in Section 2 handle it automatically):
+> ```bash
+> curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+> ```
 
 ```vim
 " ==============================================================================
@@ -550,6 +555,13 @@ set incsearch               " Show matches as you type the search pattern
 set hlsearch                " Highlight all matches of the last search
 
 " 2. Plugin Management (vim-plug)
+" Auto-install vim-plug if missing
+if empty(glob('~/.vim/autoload/plug.vim'))
+  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
 call plug#begin('~/.vim/plugged')
 
 " Essential lightweight plugins for CP
