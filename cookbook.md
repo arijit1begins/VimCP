@@ -283,11 +283,11 @@ Open the file browser with `:Vex` or `<leader>e` to manage files visually:
 
 ## COMPILATION & EXECUTION
 
-### Your Custom Shortcuts (C++ files only)
+### Your Custom Shortcuts (C and C++ files)
 
 | Key | Action |
 |-----|--------|
-| `<F5>` | Save, compile (C++17, -O2, -Wall), and run normally |
+| `<F5>` | Save, compile (C11 with `-lm` / C++17, -O2, -Wall), and run normally |
 | `<F6>` | Save, compile, and run with `input.txt` / `output.txt` redirection |
 | `<F7>` | Clear terminal screen |
 
@@ -332,7 +332,7 @@ Integrate CMake with Vim’s build engine. This parses compilation warnings and 
 Add this to your `.vimrc` to build projects with `<F4>`:
 ```vim
 " Automatically compile using CMake and open quickfix if there are errors
-autocmd FileType cpp nnoremap <F4> :wa<CR>:set makeprg=cmake\ --build\ build<CR>:make<CR>:cwindow<CR>
+autocmd FileType c,cpp nnoremap <buffer> <F4> :wa<CR>:set makeprg=cmake\ --build\ build<CR>:make<CR>:cwindow<CR>
 ```
 *(Note: `:cwindow` opens the quickfix window only if there are actual compilation errors/warnings).*
 
@@ -423,7 +423,7 @@ Your CP template might be 50+ lines of `#include`s, `#define`s, and helper funct
 * **`zM`**: Close **all** folds in the file (great for collapsing your entire template).
 * **`zR`**: Open **all** folds in the file.
 
-*Tip*: Add `set foldmethod=indent` to your `.vimrc`. This automatically creates folds based on your C++ indentation levels, making `zM` and `zR` work flawlessly without manual setup.
+*Tip*: Add `set foldmethod=indent` to your `.vimrc`. This automatically creates folds based on your C/C++ indentation levels, making `zM` and `zR` work flawlessly without manual setup.
 
 ### 6. The "Oh No" Recovery: Time Travel
 Made a massive mistake? Deleted the wrong function? Vim has a built-in time machine.
@@ -534,7 +534,7 @@ Try to run through this exercise until the keystrokes feel entirely natural.
 
 ```vim
 " ==============================================================================
-" VIM CONFIGURATION FOR COMPETITIVE PROGRAMMING (C++)
+" VIM CONFIGURATION FOR COMPETITIVE PROGRAMMING (C / C++)
 " ==============================================================================
 
 " 1. Foundation & UI
@@ -558,7 +558,7 @@ Plug 'tpope/vim-surround'     " Easily change/delete/add surrounding characters
 
 call plug#end()
 
-" 3. C++ Smart Indentation
+" 3. C / C++ Smart Indentation
 set autoindent              " Copy indent from current line when starting a new one
 set smartindent             " Smart auto-indenting for C-like languages
 set cindent                 " Strict C/C++ indentation rules (handles { } perfectly)
@@ -567,6 +567,9 @@ set shiftwidth=4            " Number of spaces to use for auto-indent and >> / <
 set softtabstop=4           " Makes <Tab> and <Backspace> feel like 4 spaces
 set expandtab               " Convert <Tab> keystrokes to spaces (prevents mixed tabs/spaces)
 set smarttab                " <Tab> at the beginning of a line inserts shiftwidth spaces
+
+" Explicitly enforce indentation locally for .c and .cpp buffers (prevents runtime indent files from overriding)
+autocmd FileType c,cpp setlocal cindent autoindent tabstop=4 shiftwidth=4 softtabstop=4 expandtab cinoptions=:0,l1,g0,t0,(0,W4
 
 " 4. Navigation & Window Management
 let mapleader = ","         " Set the 'leader' key to comma (used for custom shortcuts)
@@ -586,20 +589,23 @@ let g:netrw_winsize = 25              " File browser takes up 25% of the screen 
 nnoremap <leader>e :Vex<CR>           
 
 " 6. Competitive Programming Compilation & Execution Shortcuts
-" Note: These only apply to .cpp files. 
+" Note: These apply to .c and .cpp files.
 " % is the current filename, %< is the filename without the extension.
 
 " <F4>: Save all files and build project using CMake
-autocmd FileType cpp nnoremap <F4> :wa<CR>:set makeprg=cmake\ --build\ build<CR>:make<CR>:cwindow<CR>
+autocmd FileType c,cpp nnoremap <buffer> <F4> :wa<CR>:set makeprg=cmake\ --build\ build<CR>:make<CR>:cwindow<CR>
 
-" <F5>: Save, compile with C++17 & O2 optimization, and run normally
-autocmd FileType cpp nnoremap <F5> :w<CR>:!g++ -std=c++17 -O2 -Wall % -o %< && time ./%<<CR>
+" <F5>: Save, compile with optimization (-O2, -Wall), and run normally
+" Compiles with gcc (C11 with -lm for math) for .c, and g++ (C++17) for .cpp
+autocmd FileType c   nnoremap <buffer> <F5> :w<CR>:!gcc -std=c11 -O2 -Wall % -o %< -lm && time ./%<<CR>
+autocmd FileType cpp nnoremap <buffer> <F5> :w<CR>:!g++ -std=c++17 -O2 -Wall % -o %< && time ./%<<CR>
 
 " <F6>: Save, compile, and run with input.txt / output.txt redirection
-autocmd FileType cpp nnoremap <F6> :w<CR>:!g++ -std=c++17 -O2 -Wall % -o %< && time ./%< < input.txt > output.txt<CR>
+autocmd FileType c   nnoremap <buffer> <F6> :w<CR>:!gcc -std=c11 -O2 -Wall % -o %< -lm && time ./%< < input.txt > output.txt<CR>
+autocmd FileType cpp nnoremap <buffer> <F6> :w<CR>:!g++ -std=c++17 -O2 -Wall % -o %< < input.txt > output.txt<CR>
 
 " <F7>: Clear the terminal screen (useful before running to keep output clean)
-autocmd FileType cpp nnoremap <F7> :!clear<CR>
+autocmd FileType c,cpp nnoremap <buffer> <F7> :!clear<CR>
 
 " 7. Optional: System Clipboard Support (Uncomment if using vim-gtk3 or vim-x11)
 " nnoremap <leader>y "+y          " Copy to system clipboard
