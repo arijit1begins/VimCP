@@ -305,6 +305,31 @@ Open the file browser with `:Vex` or `<leader>e` to manage files visually:
 | `<F5>` | Save, compile (C11 with `-lm` / C++17, -O2, -Wall), and run normally |
 | `<F6>` | Save, compile, and run with `input.txt` / `output.txt` redirection |
 | `<F7>` | Clear terminal screen |
+| `<F8>` or `,c` | Clean compiled binary (`%<`), `a.out`, and intermediate object files (`%<.o`) |
+
+### Cleaning Compiled Binaries & Binary Naming
+
+#### 1. Binary Naming (`% -o %<`)
+By default, compiling with GCC or Clang without an output flag (e.g. `g++ solution.cpp`) produces an ambiguous executable named `a.out` (*assembler output*).
+
+Our shortcuts (`<F5>` and `<F6>`) enforce `-o %<`:
+* `%` represents the current file name (e.g., `solution.cpp`).
+* `%<` represents the file root without extension (e.g., `solution`).
+* The compiled executable is named directly after your file (`./solution`), making recognition instant and preventing confusion when working with multiple problem files.
+
+#### 2. Clean Operation (`<F8>`, `,c`, or `:Clean`)
+When you want to remove compiled binaries and keep your directory tidy:
+* Press **`<F8>`** or **`<leader>c`** (i.e. `,c`) or type **`:Clean`**.
+* This safely deletes:
+  * The compiled binary for the active file (`%<`)
+  * Any default `a.out` binaries
+  * Any intermediate object files (`%<.o`)
+* All source files (`.cpp`, `.c`, `.h`), test data (`input.txt`, `output.txt`), and Git files are safely preserved.
+
+#### 3. Cleaning CMake Builds
+For CMake-based projects:
+* **Wipe build folder**: `:!rm -rf build`
+* **Target clean**: `:!cmake --build build --target clean`
 
 ### Terminal in Vim (For Debugging)
 
@@ -644,6 +669,17 @@ autocmd FileType cpp nnoremap <buffer> <F6> :w<CR>:!g++ -std=c++17 -O2 -Wall % -
 
 " <F7>: Clear the terminal screen (useful before running to keep output clean)
 autocmd FileType c,cpp nnoremap <buffer> <F7> :!clear<CR>
+
+" Ensure F8 terminal code is recognized across tmux / wezterm / xterm
+if !has('gui_running')
+  execute "set <F8>=\<Esc>[19~"
+endif
+
+" <F8> or <leader>c: Clean compiled binary for current file (%<), default a.out, and object files
+autocmd FileType c,cpp nnoremap <buffer> <F8> :!rm -f %< a.out %<.o && echo "Cleaned %<, a.out, and %<.o"<CR>
+autocmd FileType c,cpp nnoremap <buffer> <Esc>[19~ :!rm -f %< a.out %<.o && echo "Cleaned %<, a.out, and %<.o"<CR>
+autocmd FileType c,cpp nnoremap <buffer> <leader>c :!rm -f %< a.out %<.o && echo "Cleaned %<, a.out, and %<.o"<CR>
+autocmd FileType c,cpp command! -buffer Clean execute '!rm -f ' . expand('%<') . ' a.out ' . expand('%<') . '.o' | echo "Cleaned " . expand('%<') . ", a.out, and " . expand('%<') . ".o"
 
 " 7. Optional: System Clipboard Support (Uncomment if using vim-gtk3 or vim-x11)
 " nnoremap <leader>y "+y          " Copy to system clipboard
