@@ -159,6 +159,21 @@ Using `Ctrl+v` (Block-wise Visual Mode) is a game-changer for Competitive Progra
   2. Press `d` or `x` to delete the block.
   3. Or press `c` to change the entire block, type the new text, and press `Esc` to apply it to all lines.
 
+### Whole-Buffer Operations (Select All, Delete All, Copy All)
+
+Common full-file editing actions for Competitive Programming (e.g., clearing the buffer for new test templates or copying code for submission):
+
+| Command | Action | Description |
+|---------|--------|-------------|
+| `ggVG` | **Select All** | Jump to start (`gg`), enter Visual Line mode (`V`), jump to end (`G`) |
+| `ggdG` or `:%d` | **Delete All** (Clear Buffer) | Deletes all lines in the entire file in one operation |
+| `ggVGd` | **Select All and Delete** | Highlights entire file in Visual mode and deletes it |
+| `ggVGc` | **Select All and Replace** | Highlights entire file, deletes content, and enters Insert mode |
+| `ggyG` or `:%y` | **Yank (Copy) All** | Copies the entire file into the default register |
+| `gg"+yG` | **Copy All to System Clipboard** | Copies the whole file to system clipboard (for submitting code) |
+| `gg=G` | **Auto-Indent Entire File** | Automatically fixes indentation across the whole file |
+| `u` | **Undo / Revert All** | Reverts the last whole-file operation |
+
 ---
 
 ## SEARCH & REPLACE
@@ -488,6 +503,17 @@ Try to run through this exercise until the keystrokes feel entirely natural.
 | `10j` | Move down 10 lines (use with relativenumber!) |
 | `2fa` | Find the 2nd occurrence of 'a' on the line |
 | `5yy` | Yank 5 lines |
+
+### Whole-File Actions (CP Essentials)
+
+| Command | Action |
+|---------|--------|
+| `ggVG` | Select all |
+| `ggdG` or `:%d` | Delete all (clear file) |
+| `ggVGd` | Select all and delete |
+| `ggVGc` | Select all and replace / change |
+| `ggyG` or `:%y` | Copy / yank entire file |
+| `gg=G` | Auto-indent entire file |
 
 ### Command-Line Shortcuts
 

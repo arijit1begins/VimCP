@@ -149,9 +149,48 @@ document.addEventListener('DOMContentLoaded', async () => {
     function setupSearch(originalHtml) {
         let matches = [];
         let currentMatchIndex = -1;
+        const searchCount = document.getElementById('search-count');
+        const searchClear = document.getElementById('search-clear');
+        const searchShortcut = document.querySelector('.search-shortcut');
 
-        // Handle Enter key for cycling through matches
+        // Global hotkey: '/' or 'Ctrl+K' / 'Cmd+K' to focus search
+        window.addEventListener('keydown', (e) => {
+            const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+            const isTyping = activeTag === 'input' || activeTag === 'textarea';
+
+            if ((e.key === '/' && !isTyping) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+        });
+
+        // Clear button click
+        if (searchClear) {
+            searchClear.addEventListener('click', () => {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.focus();
+            });
+        }
+
+        // Shortcut badge click
+        if (searchShortcut) {
+            searchShortcut.addEventListener('click', () => {
+                searchInput.focus();
+                searchInput.select();
+            });
+        }
+
+        // Handle Enter key for cycling and Escape for canceling
         searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.blur();
+                return;
+            }
+
             if (e.key === 'Enter' && matches.length > 0) {
                 e.preventDefault();
                 
@@ -172,6 +211,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const activeMatch = matches[currentMatchIndex];
                 activeMatch.style.backgroundColor = '#fb923c'; // Orange highlight for active
                 activeMatch.style.color = '#fff';
+
+                if (searchCount) {
+                    searchCount.textContent = `${currentMatchIndex + 1}/${matches.length}`;
+                }
                 
                 const headerOffset = 100;
                 const elementPosition = activeMatch.getBoundingClientRect().top;
@@ -184,26 +227,92 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.trim().toLowerCase();
+            const rawTerm = e.target.value.trim().toLowerCase();
             
-            // Always reset the content first to clear previous searches
+            // Always reset content first
             contentDiv.innerHTML = originalHtml;
+            setupCopyButtons();
             matches = [];
             currentMatchIndex = -1;
-            
-            if (!term) return;
 
-            // 1. Highlight text nodes
-            const walker = document.createTreeWalker(contentDiv, NodeFilter.SHOW_TEXT, null, false);
+            if (!rawTerm) {
+                if (searchCount) searchCount.style.display = 'none';
+                if (searchClear) searchClear.style.display = 'none';
+                if (searchShortcut) searchShortcut.style.display = '';
+                return;
+            }
+
+            if (searchClear) searchClear.style.display = 'inline-block';
+            if (searchShortcut) searchShortcut.style.display = 'none';
+
+            // Tokenize query words & filter common stop words
+            const stopWords = new Set(['and', 'or', 'the', 'a', 'an', 'to', 'in', 'of', 'for', 'with', 'on', 'at', 'is']);
+            const rawTokens = rawTerm.split(/\s+/).filter(Boolean);
+            let tokens = rawTokens.filter(t => !stopWords.has(t));
+            if (tokens.length === 0) tokens = rawTokens;
+
+            // 1. Filter tables (hide non-matching rows, keep matching rows visible)
+            const tables = contentDiv.querySelectorAll('table');
+            tables.forEach(table => {
+                const rows = table.querySelectorAll('tr:not(:first-child)');
+                let hasVisibleRow = false;
+                
+                // If the table header contains all tokens, keep all rows
+                const headerText = table.querySelector('tr:first-child')?.textContent.toLowerCase() || '';
+                if (tokens.every(token => headerText.includes(token))) {
+                    return;
+                }
+
+                rows.forEach(row => {
+                    const rowText = row.textContent.toLowerCase();
+                    // Matches if all query tokens appear in row or exact raw term appears
+                    const matchesAll = tokens.every(token => rowText.includes(token)) || rowText.includes(rawTerm);
+                    if (matchesAll) {
+                        row.style.display = '';
+                        hasVisibleRow = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                if (!hasVisibleRow) {
+                    table.style.display = 'none';
+                } else {
+                    table.style.display = '';
+                }
+            });
+
+            // 2. Highlight text nodes matching tokens or full query
+            const walker = document.createTreeWalker(contentDiv, NodeFilter.SHOW_TEXT, {
+                acceptNode: function(node) {
+                    const parent = node.parentElement;
+                    if (!parent) return NodeFilter.FILTER_REJECT;
+                    // Skip hidden table rows/tables
+                    if (parent.closest('tr[style*="display: none"]') || parent.closest('table[style*="display: none"]')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            }, false);
+
             const nodesToReplace = [];
             let node;
             while (node = walker.nextNode()) {
-                if (node.nodeValue.toLowerCase().includes(term)) {
+                const valLower = node.nodeValue.toLowerCase();
+                if (tokens.some(token => valLower.includes(token))) {
                     nodesToReplace.push(node);
                 }
             }
 
+            // Create regex matching rawTerm first (if multiple words), then individual tokens
+            const uniqueTokens = [...new Set([rawTerm, ...tokens])]
+                .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                .sort((a, b) => b.length - a.length);
+            const regex = new RegExp(`(${uniqueTokens.join('|')})`, 'gi');
+
             nodesToReplace.forEach(n => {
+                const parent = n.parentNode;
+                if (!parent) return;
                 const temp = document.createElement('span');
                 const escapedText = n.nodeValue
                     .replace(/&/g, "&amp;")
@@ -212,47 +321,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .replace(/"/g, "&quot;")
                     .replace(/'/g, "&#039;");
                 
-                // Escape regex special characters in the search term
-                const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(`(${safeTerm})`, 'gi');
-                
                 temp.innerHTML = escapedText.replace(regex, '<mark class="search-match" style="background-color: var(--accent-primary); color: #0f172a; border-radius: 2px; padding: 0 2px; transition: all 0.2s;">$1</mark>');
                 
                 while (temp.firstChild) {
-                    n.parentNode.insertBefore(temp.firstChild, n);
+                    parent.insertBefore(temp.firstChild, n);
                 }
-                n.parentNode.removeChild(n);
+                parent.removeChild(n);
             });
 
-            // Gather all match elements
+            // Gather all visible match elements
             matches = Array.from(contentDiv.querySelectorAll('mark.search-match'));
 
-            // 2. Filter tables (hide rows that don't match)
-            const tables = contentDiv.querySelectorAll('table');
-            tables.forEach(table => {
-                const rows = table.querySelectorAll('tr:not(:first-child)');
-                let hasVisibleRow = false;
-                
-                // If the table header has the term, keep all rows visible
-                const headerText = table.querySelector('tr:first-child').textContent.toLowerCase();
-                if (headerText.includes(term)) {
-                    return; // skip hiding rows
+            // Update match count badge
+            if (searchCount) {
+                searchCount.style.display = 'inline-block';
+                if (matches.length > 0) {
+                    searchCount.textContent = `1/${matches.length}`;
+                } else {
+                    searchCount.textContent = '0 found';
                 }
-
-                rows.forEach(row => {
-                    if (row.textContent.toLowerCase().includes(term)) {
-                        row.style.display = '';
-                        hasVisibleRow = true;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-                
-                // Hide table completely if no rows match
-                if (!hasVisibleRow) {
-                    table.style.display = 'none';
-                }
-            });
+            }
 
             // 3. Scroll to the first match automatically
             if (matches.length > 0) {
@@ -269,8 +357,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     behavior: "smooth"
                 });
             } else {
-                // If no highlighted matches, maybe scroll to a visible table row
-                const visibleRow = contentDiv.querySelector('tr:not([style*="display: none"])');
+                // If no highlighted marks, scroll to first visible matching table row
+                const visibleRow = contentDiv.querySelector('table:not([style*="display: none"]) tr:not([style*="display: none"]):not(:first-child)');
                 if (visibleRow) {
                     const headerOffset = 100;
                     const elementPosition = visibleRow.getBoundingClientRect().top;

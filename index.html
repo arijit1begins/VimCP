@@ -12,7 +12,7 @@
     <!-- Highlight.js for code highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
     
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
     <div class="app-container">
@@ -54,7 +54,10 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input type="text" id="search-input" placeholder="Search (Press Enter to cycle)...">
+                    <input type="text" id="search-input" placeholder="Search shortcuts (e.g. select all, delete, cmake)...">
+                    <span id="search-count" class="search-count" style="display: none;"></span>
+                    <button id="search-clear" class="search-clear-btn" aria-label="Clear search" style="display: none;">&times;</button>
+                    <span class="search-shortcut" title="Press / to search">/</span>
                 </div>
             </header>
             
@@ -82,6 +85,6 @@
     <!-- DOMPurify for security (though we are trusting local markdown) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
     
-    <script src="script.js?v=4"></script>
+    <script src="script.js?v=5"></script>
 </body>
 </html>
